@@ -1,0 +1,25 @@
+{
+  "name": "ci-cd-eks-example",
+  "version": "1.0.0",
+  "description": "Ejemplo mínimo para un pipeline de CI/CD.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "jest --outputFile=./test-results.log --json",
+    "test-report": "jest"
+  },
+  "keywords": [
+    "ci",
+    "cd",
+    "github-actions",
+    "eks"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
