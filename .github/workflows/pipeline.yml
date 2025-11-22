@@ -26,7 +26,7 @@ jobs:
         id: set_tag
         run: |
           REPO_NAME="${{ github.event.repository.name }}"
-          TAG_FULL="${REPO_NAME}:${{ github.ref_name }}-${{ github.run_id }}"
+          TAG_FULL="${REPO_NAME,,}:${{ github.ref_name }}-${{ github.run_id }}"
           echo "tag=${TAG_FULL}" >> $GITHUB_OUTPUT 
           echo "Tag generado: ${TAG_FULL}"
 
