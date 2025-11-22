@@ -5,7 +5,7 @@ on:
       - master
 
 jobs:
-  build_test:
+  Build_Test:
     runs-on: ubuntu-latest
     steps:
       - name: ⬇️ Checkout del Código
@@ -21,3 +21,15 @@ jobs:
 
       - name: 🧪 Ejecutar Pruebas Automatizadas (Unidad/Integración)
         run: npm test
+      
+      - name: 🏷️ Crear Tag Dinámico
+        id: set_tag
+        run: |
+          # 🎯 Se añade el nombre del repositorio (github.event.repository.name) 
+          REPO_NAME="${{ github.event.repository.name }}"
+          TAG_NAME="${REPO_NAME}:${{ github.ref_name }}-${{ github.run_id }}"
+          echo "tag=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "Tag generado: ${TAG_NAME}"
+      
+      - name: 🐳 Construir Imagen Docker
+        run: docker build -t ${TAG_NAME} .
