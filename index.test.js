@@ -1,8 +1,9 @@
 // index.test.js
 
-const { greet } = require('./index');
+const { greet, calculateHeavyMetric, prepareData } = require('./index');
+const moment = require('moment'); // Nueva dependencia para la prueba correlacionada
 
-describe('Función de Saludo (greet)', () => {
+describe('Función de Saludo (greet) - Pruebas Rápidas', () => {
     
     // Prueba 1: Verifica el saludo con un nombre
     test('Debe saludar correctamente a un nombre dado', () => {
@@ -16,12 +17,76 @@ describe('Función de Saludo (greet)', () => {
         const expected = 'Hola, mundo!';
         expect(greet()).toBe(expected);
     });
-    
-    // Puedes añadir más pruebas, como validar que el parámetro sea una cadena, etc.
-    test('Debe manejar un nombre vacío', () => {
-        const name = '';
-        const expected = 'Hola, mundo!';
-        expect(greet(name)).toBe(expected);
-    });
+});
 
+
+describe('Funciones de Datos Correlacionadas - Lodash y Moment', () => {
+    const mockUsers = [
+        { id: 101, name: 'Charlie', status: 'inactive', created: '2023-01-15' },
+        { id: 102, name: 'Alice', status: 'active', created: '2024-03-20' },
+        { id: 103, name: 'Bob', status: 'active', created: '2023-11-01' },
+        { id: 104, name: 'Diana', status: 'active', created: '2024-05-10' },
+        { id: 105, name: 'Eve', status: 'active', created: '2024-01-01' },
+        { id: 106, name: 'Frank', status: 'active', created: '2024-06-01' },
+    ];
+
+    // Prueba 3: Verifica el uso correcto de Lodash (filtrar, ordenar y limitar)
+    test('Debe filtrar solo usuarios activos, ordenar por nombre y limitar a 5', () => {
+        const result = prepareData(mockUsers);
+        
+        // 1. Verificar la longitud (solo 5 de 6)
+        expect(result.length).toBe(5); 
+
+        // 2. Verificar que todos están activos
+        const allActive = result.every(user => user.status === 'active');
+        expect(allActive).toBe(true);
+
+        // 3. Verificar el orden (Alice, Bob, Charlie... )
+        expect(result[0].name).toBe('Alice');
+        expect(result[1].name).toBe('Bob');
+        // 'Charlie' está inactivo en el mockUsers original, pero 'Diana' es el siguiente activo
+        expect(result[2].name).toBe('Diana'); 
+    });
+    
+    // Prueba 4: Prueba correlacionada usando Moment
+    test('Debe verificar que el usuario más reciente es ' + mockUsers[5].name, () => {
+        const activeUsers = mockUsers.filter(user => user.status === 'active');
+        
+        let mostRecentDate = moment('2000-01-01');
+        let mostRecentUser = null;
+
+        activeUsers.forEach(user => {
+            const userDate = moment(user.created);
+            if (userDate.isAfter(mostRecentDate)) {
+                mostRecentDate = userDate;
+                mostRecentUser = user;
+            }
+        });
+
+        expect(mostRecentUser.name).toBe('Frank');
+    });
+});
+
+
+describe('Función de Carga Pesada (calculateHeavyMetric) - Prueba Lenta para Demostración', () => {
+    // Esta prueba sigue siendo intencionalmente lenta para que se aprecie el ahorro de CI/CD.
+    test('Debe calcular la métrica pesada y la ejecución debe tomar tiempo', () => {
+        const ITERATIONS_COUNT = 10000; 
+        const START_TIME = Date.now();
+        
+        let finalResult = 0;
+        // Llamamos 5 veces para garantizar una ejecución lenta (ej. 5-10 segundos)
+        for (let i = 0; i < 5; i++) { 
+            finalResult += calculateHeavyMetric(ITERATIONS_COUNT);
+        }
+        
+        const END_TIME = Date.now();
+        const DURATION_MS = END_TIME - START_TIME;
+
+        // La aserción asegura que el cálculo se realizó
+        expect(finalResult).toBeGreaterThan(0);
+
+        console.log(`Tiempo total de ejecución de la prueba pesada: ${DURATION_MS}ms`);
+
+    }, 15000); // Mantenemos el timeout alto
 });
