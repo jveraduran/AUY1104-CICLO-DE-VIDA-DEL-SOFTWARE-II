@@ -6,6 +6,7 @@
 1.  Pre-requisitos\
 2.  Instalación Local de Dependencias y Herramientas\
 3.  Ejecución del Proyecto Node.js\
+4.  Configuracion de variables en Action\
 
 Trabajaremos en construir un pipeline, con distintas opciones disponibles, para poder realizar el flujo logico de publicacion de una imagen docker a un ECR en AWS.
 
