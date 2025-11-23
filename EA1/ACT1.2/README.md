@@ -1,6 +1,12 @@
 
 # Integración de Componentes Reutilizables CI/CD (Node.js, Docker, AWS ECR)
 
+# 📌 **Índice**
+
+1.  Pre-requisitos\
+2.  Instalación Local de Dependencias y Herramientas\
+3.  Ejecución del Proyecto Node.js\
+
 Trabajaremos en construir un pipeline, con distintas opciones disponibles, para poder realizar el flujo logico de publicacion de una imagen docker a un ECR en AWS.
 
 ## 📝 Descripción del Flujo Integrado
