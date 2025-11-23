@@ -1,6 +1,6 @@
 # Parametrización de Plantillas para Reutilización CI/CD (Node.js, Docker, AWS ECR)
 
-``` bash
+```bash
 on:
   push:
     branches:
@@ -9,6 +9,8 @@ on:
     types: [published]
 ```
 
-``` bash
+```bash
 if: ${{ github.event_name == 'pull_request' }}
 ``` 
+
+```actions/cache@v4```
