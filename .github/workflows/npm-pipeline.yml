@@ -4,7 +4,7 @@ on:
     branches:
       - master
   pull_request:
-    types: [opened, reopened, synchronize]
+    types: [opened, reopened, synchronize] # Activadores para CI
 
 jobs:
   Build_Test:
@@ -13,32 +13,22 @@ jobs:
       - name: ⬇️ Checkout del Código
         uses: actions/checkout@v4
 
-      # 1. ⚡ Optimización: Cache de Dependencias
-      # Guarda y restaura las dependencias de NPM para evitar descargas repetidas.
-      - name: 💾 Restaurar Caché de Node Modules
-        uses: actions/cache@v4
-        id: npm-cache 
-        with:
-          path: ~/.npm # Ruta de la caché de NPM en el runner
-          # La llave (key) debe cambiar si el archivo package-lock.json cambia
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      # 2. Configuración de Node.js
-      - name: ⚙️ Configurar Node.js v20
+      # 1. ⚙️ Configuración de Node.js v20 con Caché Integrada
+      # Usamos el parámetro 'cache: npm' en 'setup-node' para la mejor optimización.
+      # Esto maneja automáticamente las carpetas de caché (~/.npm) basado en package-lock.json.
+      - name: ⚙️ Configurar Node.js v20 con Caché
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      # 3. Instalación de Dependencias (solo si la caché falló)
-      # Este paso solo correrá si el caché no fue encontrado (cache-hit != true).
+          cache: 'npm' 
+          
+      # 2. 📦 Instalación de Dependencias 
+      # npm ci siempre debe correr. Si la caché se restauró, este paso es instantáneo.
       - name: 📦 Instalar Dependencias (npm ci)
-        # La condición 'if' verifica si la caché fue una falta (miss)
-        if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm ci
       
-      # 4. Auditoría y Pruebas (Solo en PR)
+      # 3. 🔒 Auditoría y Pruebas (Solo en PR)
+      # Estos pasos solo se ejecutan si el evento es un Pull Request.
       - name: 🔒 Verificar Compliance (Solo en PR)
         if: ${{ github.event_name == 'pull_request' }}
         run: npm audit
