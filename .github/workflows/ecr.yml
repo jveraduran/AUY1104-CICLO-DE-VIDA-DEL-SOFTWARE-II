@@ -1,0 +1,58 @@
+name: ECR Build & Push
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    name: Build, Tag and Push to ECR
+    runs-on: ubuntu-latest
+    
+    # 💡 Definimos las variables de entorno del job, extrayendo sus valores 
+    # del contexto 'vars' de GitHub (Variables de Repositorio/Entorno).
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+
+    steps:
+      # 1. Checkout del código
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      # 2. Configurar credenciales de AWS
+      # Las credenciales (Secrets) se usan para autenticación. La región se toma de env.
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }} 
+
+      # 3. Login en ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        
+      # 4. Definir variables y construir la imagen
+      - name: Build, tag, and push image to ECR
+        id: build-image
+        env:
+          # ECR_REGISTRY se sigue obteniendo de la acción de login
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }} # Usamos el SHA del commit como tag
+        run: |
+          # 4.1. Construir la imagen local
+          # $ECR_REPOSITORY se resuelve a partir del bloque 'env' del job.
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+          
+          # 4.2. Etiquetar la imagen con la URI completa de ECR
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          
+          # 4.3. Empujar la imagen a ECR
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          
+          echo "La imagen $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ha sido publicada."
