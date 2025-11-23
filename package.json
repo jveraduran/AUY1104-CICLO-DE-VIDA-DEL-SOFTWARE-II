@@ -1,7 +1,7 @@
 {
   "name": "ci-cd-eks-example",
   "version": "1.0.0",
-  "description": "Ejemplo de pipeline CI/CD con pruebas de carga intencionalmente lentas y muchas dependencias.",
+  "description": "Ejemplo de pipeline CI/CD",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
