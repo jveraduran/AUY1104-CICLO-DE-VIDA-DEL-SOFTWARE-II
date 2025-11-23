@@ -1,0 +1,48 @@
+name: Build and Test (Optimized)
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  Build_Test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout del Código
+        uses: actions/checkout@v4
+
+      # 1. ⚡ Optimización: Cache de Dependencias
+      # Guarda y restaura las dependencias de NPM para evitar descargas repetidas.
+      - name: 💾 Restaurar Caché de Node Modules
+        uses: actions/cache@v4
+        id: npm-cache 
+        with:
+          path: ~/.npm # Ruta de la caché de NPM en el runner
+          # La llave (key) debe cambiar si el archivo package-lock.json cambia
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # 2. Configuración de Node.js
+      - name: ⚙️ Configurar Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3. Instalación de Dependencias (solo si la caché falló)
+      # Este paso solo correrá si el caché no fue encontrado (cache-hit != true).
+      - name: 📦 Instalar Dependencias (npm ci)
+        # La condición 'if' verifica si la caché fue una falta (miss)
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+        run: npm ci
+      
+      # 4. Auditoría y Pruebas (Solo en PR)
+      - name: 🔒 Verificar Compliance (Solo en PR)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: npm audit
+
+      - name: 🧪 Ejecutar Pruebas Automatizadas (Unidad/Integración)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: npm test
