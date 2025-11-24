@@ -10,13 +10,13 @@ Instalaremos las dependencias necesarias y las herramientas de línea de comando
 
 Estos comandos configuran e instalan el motor Docker en su servidor Debian.
 
-# 1. Actualizar sistema e instalar dependencias iniciales
+#### 1. Actualizar sistema e instalar dependencias iniciales
 ```bash
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y ca-certificates curl gnupg lsb-release
 ```
 
-# 2. Agregar clave GPG y repositorio oficial de Docker
+#### 2. Agregar clave GPG y repositorio oficial de Docker
 ```bash
 sudo mkdir -p /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
@@ -29,13 +29,13 @@ echo \
   $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 ```
 
-# 3. Instalar Docker Engine, CLI y Buildx
+#### 3. Instalar Docker Engine, CLI y Buildx
 ```bash
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
-# 4. Verificar instalación
+#### 4. Verificar instalación
 ```bash
 sudo docker version
 sudo docker info
@@ -44,19 +44,19 @@ sudo docker info
 ### 1.2. Instalación de Kubectl (Versión 1.30)
 kubectl es la herramienta estándar para interactuar con el Control Plane de Kubernetes. Debe coincidir con la versión de su clúster (v1.30).
 
-# 1. Instalar dependencias
+#### 1. Instalar dependencias
 ```bash
 sudo apt-get update
 sudo apt-get install -y ca-certificates curl gnupg
 ```
 
-# 2. Agregar la clave GPG y el repositorio de Kubernetes
+#### 2. Agregar la clave GPG y el repositorio de Kubernetes
 ```bash
 sudo mkdir -p -m 755 /etc/apt/keyrings
 curl -fsSL [https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key](https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key) | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 ```
 
-# Definir el repositorio para la versión 1.30
+#### Definir el repositorio para la versión 1.30
 ```bash
 echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] [https://pkgs.k8s.io/core:/stable:/v1.30/deb/](https://pkgs.k8s.io/core:/stable:/v1.30/deb/) /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
 ```
@@ -69,17 +69,17 @@ sudo apt-get install -y kubectl
 
 ### 1.3. Instalación de Eksctl (Opcional pero Recomendado)
 
-# Descarga el binario oficial más reciente de eksctl
+#### Descarga el binario oficial más reciente de eksctl
 ```bash
 curl --silent --location "[https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$(uname](https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$(uname) -s)_amd64.tar.gz" | tar xz -C /tmp
 ```
 
-# Mueve el binario a una ubicación en el PATH
+#### Mueve el binario a una ubicación en el PATH
 ```bash
 sudo mv /tmp/eksctl /usr/local/bin
 ```
 
-# Verifica la instalación
+#### Verifica la instalación
 ```bash
 eksctl version
 ```
@@ -91,7 +91,7 @@ Configuremos las credenciales necesarias y el repositorio de imágenes.
 ### 2.1. Configuración de Credenciales AWS
 ⚠️ Acción Requerida: Reemplace los valores TU_ACCESS_KEY_ID, TU_SECRET_ACCESS_KEY y TU_SESSION_TOKEN con sus credenciales de laboratorio.
 
-# 1. Exportar variables de entorno de AWS
+#### 1. Exportar variables de entorno de AWS
 ```bash
 export AWS_ACCESS_KEY_ID="TU_ACCESS_KEY_ID"
 export AWS_SECRET_ACCESS_KEY="TU_SECRET_ACCESS_KEY"
@@ -102,13 +102,13 @@ export AWS_DEFAULT_REGION="us-east-1"
 ### 2.2. Creación y Login en ECR (Elastic Container Registry)
 Crearemos el repositorio y autenticaremos Docker para poder subir la imagen.
 
-# 1. Crear el repositorio ECR (si no existe)
+#### 1. Crear el repositorio ECR (si no existe)
 ```bash
 aws ecr create-repository --repository-name duoc-lab
 ```
 
-# 2. Autenticar Docker con ECR (Reemplaza 885869691689 con tu Account ID si es necesario)
-# Este comando obtiene un token de login temporal y lo pasa a Docker. Recuerda reemplazar en el comando por tu cuenta de AWS.
+#### 2. Autenticar Docker con ECR (Reemplaza 885869691689 con tu Account ID si es necesario)
+#### Este comando obtiene un token de login temporal y lo pasa a Docker. Recuerda reemplazar en el comando por tu cuenta de AWS.
 ```bash
 aws ecr get-login-password --region us-east-1 | sudo docker login --username AWS --password-stdin [TU-CUENTA-AWS].dkr.ecr.us-east-1.amazonaws.com
 ```
@@ -116,7 +116,7 @@ aws ecr get-login-password --region us-east-1 | sudo docker login --username AWS
 ### 2.3. Construcción, Etiquetado y Push de la Imagen
 Definiremos variables de tag para mantener la imagen organizada y la subiremos al repositorio.
 
-# Definir variables. Usamos 'latest' para el despliegue inicial.
+#### Definir variables. Usamos 'latest' para el despliegue inicial.
 ```bash
 export ACCOUNT_ID="" # Reemplaza con tu Account ID
 export REGION="us-east-1"
@@ -125,19 +125,19 @@ export LOCAL_TAG="duoc-app:latest"
 export ECR_URI="$ACCOUNT_ID.dkr.ecr.$[REGION.amazonaws.com/$REPO_NAME:$LOCAL_TAG](https://REGION.amazonaws.com/$REPO_NAME:$LOCAL_TAG)"
 ```
 
-# 1. Construir la imagen de Docker usando el Dockerfile en el directorio actual
+#### 1. Construir la imagen de Docker usando el Dockerfile en el directorio actual
 ```bash
 sudo docker build -t $LOCAL_TAG .
 echo "Imagen local construida con el tag: $LOCAL_TAG"
 ```
 
-# 2. Etiquetar la imagen local con la URI completa de ECR
+#### 2. Etiquetar la imagen local con la URI completa de ECR
 ```bash
 sudo docker tag $LOCAL_TAG $ECR_URI
 echo "Imagen etiquetada como: $ECR_URI"
 ```
 
-# 3. Subir (Push) la imagen a ECR
+#### 3. Subir (Push) la imagen a ECR
 ```bash
 sudo docker push $ECR_URI
 echo "¡Push a ECR completado! La imagen ya está disponible en $ECR_URI."
@@ -192,12 +192,12 @@ Una vez que el clúster esté activo y los nodos se hayan unido, podemos despleg
 
 ### 4.1. Configurar Conexión Kubeconfig y Verificar Nodos
 
-# 1. Agrega el contexto del clúster a tu archivo kubeconfig local
+#### 1. Agrega el contexto del clúster a tu archivo kubeconfig local
 ```bash
 aws eks update-kubeconfig --name duoc-eks-cluster-cli --region us-east-1
 ```
 
-# 2. Verifica que los nodos estén en estado Ready (esto puede tardar unos minutos)
+#### 2. Verifica que los nodos estén en estado Ready (esto puede tardar unos minutos)
 ```bash
 kubectl get nodes -o wide
 ```
@@ -231,3 +231,7 @@ Vuelta
 ```bash
 kubectl patch service duoc-app-bg-service -p '{"spec": {"selector": {"version": "blue"}}}'
 ```
+
+### 4.4 Despliegue de la Aplicación - Canary
+
+### 4.4 Despliegue de la Aplicación - Blue/Green
