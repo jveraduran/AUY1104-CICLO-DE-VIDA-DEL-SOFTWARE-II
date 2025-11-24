@@ -25,10 +25,10 @@ automatizado, logrando un pipeline moderno, seguro y profesional.
 
 Antes de comenzar, asegúrate de contar con:
 
--   Un sistema basado en Debian/Ubuntu.\
--   Docker instalado en tu máquina.\
--   Credenciales de AWS para laboratorio o cuenta propia.\
--   GitHub repository donde configuraremos el pipeline.\
+-   Un sistema basado en Debian/Ubuntu.
+-   Docker instalado en tu máquina.
+-   Credenciales de AWS para laboratorio o cuenta propia.
+-   GitHub repository donde configuraremos el pipeline.
 -   Node Version Manager (nvm) para gestionar versiones de Node.js.
 
 ------------------------------------------------------------------------
