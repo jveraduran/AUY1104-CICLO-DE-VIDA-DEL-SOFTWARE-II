@@ -91,8 +91,6 @@ Justifica por qué modificaste los triggers (on:) y los condicionales (if:) para
 
 Aquí tienes todo el contenido consolidado y formateado estrictamente como código Markdown. Puedes copiar el bloque siguiente y guardarlo directamente en un archivo con extensión .md (por ejemplo, guia_ci_cd.md).
 
-Markdown
-
 ## 4. 📝 Tarea de Documentación y Validación Práctica
 
 Como parte del entregable final, el estudiante debe documentar los parámetros definidos y realizar una validación práctica del pipeline ajustado.
