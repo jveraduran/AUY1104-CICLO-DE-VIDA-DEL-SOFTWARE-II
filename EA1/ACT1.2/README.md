@@ -1,14 +1,35 @@
 
 # Integración de Componentes Reutilizables CI/CD (Node.js, Docker, AWS ECR)
 
+Este documento proporciona la guía completa para instalar dependencias locales, ejecutar pruebas, construir contenedores Docker, subirlos a AWS Elastic Container Registry (ECR) y finalmente automatizar todo el proceso mediante un pipeline de GitHub Actions (CI/CD).
+
+El objetivo es que estudiantes comprendan tanto el flujo manual como el automatizado, logrando un pipeline moderno, seguro y profesional.
+
+------------------------------------------------------------------------
+
 # 📌 **Índice**
 
 1.  Pre-requisitos\
 2.  Instalación Local de Dependencias y Herramientas\
 3.  Ejecución del Proyecto Node.js\
-4.  Configuracion de variables en Action\
+4.  Construcción y Subida de Imágenes Docker a AWS ECR\
+5.  Automatización con GitHub Actions (CI)\
+6.  Documentación Oficial de Acciones Usadas\
+
+------------------------------------------------------------------------
+
+🧩 Pre-requisitos
+Antes de comenzar, asegúrate de contar con:
+
+- Un sistema basado en Debian/Ubuntu.
+- Docker instalado en tu máquina.
+- Credenciales de AWS para laboratorio o cuenta propia.
+- GitHub repository donde configuraremos el pipeline.
+- Node Version Manager (nvm) para gestionar versiones de Node.js.
 
 Trabajaremos en construir un pipeline, con distintas opciones disponibles, para poder realizar el flujo logico de publicacion de una imagen docker a un ECR en AWS.
+
+------------------------------------------------------------------------
 
 ## 📝 Descripción del Flujo Integrado
 Este pipeline se estructura en dos fases principales, asegurando que solo el código validado sea convertido en una imagen de contenedor y subido al registro.
