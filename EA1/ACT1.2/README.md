@@ -9,23 +9,20 @@ El objetivo es que estudiantes comprendan tanto el flujo manual como el automati
 
 # 📌 **Índice**
 
-1.  Pre-requisitos\
-2.  Instalación Local de Dependencias y Herramientas\
-3.  Ejecución del Proyecto Node.js\
-4.  Construcción y Subida de Imágenes Docker a AWS ECR\
-5.  Automatización con GitHub Actions (CI)\
-6.  Documentación Oficial de Acciones Usadas\
+- Pre-requisitos
+- Instalación Local de Dependencias y Herramientas
+- Ejecución del Proyecto Node.js
+- Construcción y Subida de Imágenes Docker a AWS ECR
+- Automatización con GitHub Actions (CI)
+- Documentación Oficial de Acciones Usadas
 
 ------------------------------------------------------------------------
 
 🧩 Pre-requisitos
 Antes de comenzar, asegúrate de contar con:
 
-- Un sistema basado en Debian/Ubuntu.
-- Docker instalado en tu máquina.
 - Credenciales de AWS para laboratorio o cuenta propia.
 - GitHub repository donde configuraremos el pipeline.
-- Node Version Manager (nvm) para gestionar versiones de Node.js.
 
 Trabajaremos en construir un pipeline, con distintas opciones disponibles, para poder realizar el flujo logico de publicacion de una imagen docker a un ECR en AWS.
 
@@ -34,7 +31,7 @@ Trabajaremos en construir un pipeline, con distintas opciones disponibles, para 
 ## 📝 Descripción del Flujo Integrado
 Este pipeline se estructura en dos fases principales, asegurando que solo el código validado sea convertido en una imagen de contenedor y subido al registro.
 
-1. Fase de Integración Continua (CI): Validación del Código
+### 1. Fase de Integración Continua (CI): Validación del Código
 
 **Preparación:** El flujo comienza con el Checkout del código y la configuración del entorno, instalando Node.js v20. Luego se instalan todas las dependencias del proyecto (npm ci).
 
@@ -46,7 +43,7 @@ Este pipeline se estructura en dos fases principales, asegurando que solo el có
 
 **Decisión (CI Completo):** La fase de CI solo se considera Exitosa si ambos pasos (Compliance y Pruebas) terminan sin errores. Si alguno falla, el pipeline se detiene inmediatamente.
 
-2. Fase de Integración Continua (CI): Contenerización y Registro
+### 2. Fase de Integración Continua (CI): Contenerización y Registro
 
 **Activación:** Esta fase solo se inicia si la fase de CI fue Exitosa (representado por el gate verde).
 
@@ -62,34 +59,34 @@ Este pipeline se estructura en dos fases principales, asegurando que solo el có
 
 Al completar el paso final, la imagen de contenedor (que contiene código probado y seguro) queda disponible en ECR, lista para ser desplegada en un servicio como ECS o EKS.
 
-graph TD
-    %% ===== CI PIPELINE =====
-    subgraph CI Pipeline (Validación del Código)
-        A[Start] --> B[⬇️ Checkout del Código]
-        B --> C[⚙️ Setup Node.js v20]
-        C --> D[📦 Instalar Dependencias]
-        D --> E1[🔒 Verificar Compliance - npm audit]
-        D --> E2[🧪 Ejecutar Pruebas Automatizadas]
-        E1 --> F{CI Completo<br/>¿Todo OK?}
-        E2 --> F
+```mermaid
+flowchart LR
+
+    %% ===== FASE CI =====
+    subgraph CI["Fase CI: Validación del Código"]
+        Start((Inicio)) --> Checkout[Checkout del Código]
+        Checkout --> Setup[Setup Node.js v20]
+        Setup --> Install[Instalar Dependencias]
+
+        Install --> Audit[npm audit]
+        Install --> Test[npm test]
+
+        Audit --> Gate{¿Pasa el Gate?}
+        Test --> Gate
     end
 
-    %% ===== CI PIPELINE =====
-    subgraph CI Pipeline (Contenerización y Registro)
-        F -->|✅ CI Exitoso| G[🔑 Configurar Credenciales AWS]
-        G --> H[🚪 Login en Amazon ECR]
-        H --> I[🐳 Build, Tag y Push de Imagen a ECR]
+    %% ===== FASE CD =====
+    subgraph CD["Fase CD: Contenerización y Registro"]
+        AwsCreds[Configurar Credenciales AWS] --> EcrLogin[Login en Amazon ECR]
+        EcrLogin --> BuildPush[Build, Tag & Push a ECR]
     end
 
-    %% ===== RESULTADOS =====
-    F -->|❌ CI Fallido| Z[Fin - Fallo en Pruebas/Seguridad]
-    I --> K[End - Imagen Publicada en ECR]
+    %% ===== FLUJO PRINCIPAL =====
+    Gate -->|Sí| AwsCreds
+    Gate -->|No| Stop((Error))
 
-    %% ===== STYLES =====
-    style F fill:#f9f,stroke:#333,stroke-width:2px
-    style G fill:#ccffcc,stroke:#333
-    style H fill:#ccffcc,stroke:#333
-    style I fill:#ccffcc,stroke:#333
+    BuildPush --> Final((Imagen Publicada en ECR))
+```
 
 
 ## Actions de Referencia
@@ -107,7 +104,7 @@ De acuerdo a la documentación oficial del Action ```actions/setup-node```, se p
 
 De acuerdo a la documentación oficial del Action ```aws-actions/configure-aws-credentials```, se pueden definir diversos secretos, para lo cual, parametrizaremos el argumento ```aws-access-key-id``` | ```aws-secret-access-key``` | ```aws-session-token```, para hacerlo, nos regiremos por la documentacion oficial de Github asociado a [Secrets](https://docs.github.com/es/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)
 
-``` bash
+```bash
 - name: Configure AWS Credentials
   uses: aws-actions/configure-aws-credentials@v5.1.0
   with:
