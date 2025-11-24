@@ -10,11 +10,8 @@ El objetivo es que estudiantes comprendan tanto el flujo manual como el automati
 # 📌 **Índice**
 
 - Pre-requisitos
-- Instalación Local de Dependencias y Herramientas
-- Ejecución del Proyecto Node.js
-- Construcción y Subida de Imágenes Docker a AWS ECR
-- Automatización con GitHub Actions (CI)
-- Documentación Oficial de Acciones Usadas
+- Descripción del Flujo Integrado
+- Actions de Referencia
 
 ------------------------------------------------------------------------
 
