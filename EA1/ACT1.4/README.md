@@ -68,6 +68,8 @@ Ejecuta las actividades de instlación del archivo README.md de la ACT1.1 para p
 
 ### 📊 Tabla de Resultados (A completar por el estudiante)
 
+Si quieres revisar algunas métricas, puedes visualizar las de Github Actions en la sección [Metricas](https://docs.github.com/en/actions/concepts/metrics).
+
 | Métrica | Escenario A: Manual (Local) | Escenario B: CI Básico (Cache Miss) | Escenario C: CI Optimizado (Cache Hit) |
 | :--- | :---: | :---: | :---: |
 | **Tiempo de Setup/Install** | _(ej. 45s)_ | _(ej. 30s)_ | **_(ej. 2s)_** |
