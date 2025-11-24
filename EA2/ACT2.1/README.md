@@ -202,19 +202,32 @@ aws eks update-kubeconfig --name duoc-eks-cluster-cli --region us-east-1
 kubectl get nodes -o wide
 ```
 
-### 4.2. Despliegue de la Aplicación
+### 4.2. Despliegue de la Aplicación - Rolling Update
 Revisa que tengas un archivo YAML (deployment.yaml o similar) que define tu Deployment y Service (LoadBalancer):
 
-# 1. Aplicar el manifiesto de Deployment y Service
+#### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
 kubectl apply -f app-deployment.yaml
 ```
 
-# 2. Verificar los recursos desplegados
+#### 2. Verificar los recursos desplegados
 ```bash
 kubectl get pods
 kubectl get svc
 ```
 
-### 4.3. Acceso y Verificación del Servicio
+#### 3. Acceso y Verificación del Servicio
 Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de la Public DNS, que se obtiene posterior a la ejecución del comando ```kubetl get svc``` como ```ID.us-east-1.elb.amazonaws.com``` 
+
+### 4.3 Despliegue de la Aplicación - All-In-Once
+
+#### 1. Cambia el selector del Service de 'version: blue' a 'version: green'
+
+Ida
+```bash
+kubectl patch service duoc-app-bg-service -p '{"spec": {"selector": {"version": "green"}}}'
+```
+Vuelta
+```bash
+kubectl patch service duoc-app-bg-service -p '{"spec": {"selector": {"version": "blue"}}}'
+```
