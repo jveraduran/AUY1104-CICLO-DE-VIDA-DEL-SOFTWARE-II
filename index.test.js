@@ -1,20 +1,25 @@
 // index.test.js
 
 const { greet, calculateHeavyMetric, prepareData } = require('./index');
-const moment = require('moment'); // Nueva dependencia para la prueba correlacionada
+const moment = require('moment'); 
 
 describe('Función de Saludo (greet) - Pruebas Rápidas', () => {
     
+    // Fijamos el valor de APP_COLOR para evitar variación entre entornos
+    beforeEach(() => {
+        process.env.APP_COLOR = "Mundo";
+    });
+
     // Prueba 1: Verifica el saludo con un nombre
     test('Debe saludar correctamente a un nombre dado', () => {
         const name = 'Desarrollador';
-        const expected = 'Hola, Desarrollador! Bienvenido a CI/CD.';
+        const expected = 'Hola, Desarrollador! Bienvenido a CI/CD. (Desde Mundo)';
         expect(greet(name)).toBe(expected);
     });
 
     // Prueba 2: Verifica el saludo por defecto (sin nombre)
     test('Debe devolver el saludo por defecto si no se proporciona un nombre', () => {
-        const expected = 'Hola, mundo!';
+        const expected = 'Hola! Soy Mundo';
         expect(greet()).toBe(expected);
     });
 });
@@ -41,15 +46,14 @@ describe('Funciones de Datos Correlacionadas - Lodash y Moment', () => {
         const allActive = result.every(user => user.status === 'active');
         expect(allActive).toBe(true);
 
-        // 3. Verificar el orden (Alice, Bob, Charlie... )
+        // 3. Verificar el orden alfabético
         expect(result[0].name).toBe('Alice');
         expect(result[1].name).toBe('Bob');
-        // 'Charlie' está inactivo en el mockUsers original, pero 'Diana' es el siguiente activo
-        expect(result[2].name).toBe('Diana'); 
+        expect(result[2].name).toBe('Diana');
     });
     
     // Prueba 4: Prueba correlacionada usando Moment
-    test('Debe verificar que el usuario más reciente es ' + mockUsers[5].name, () => {
+    test('Debe verificar que el usuario más reciente es Frank', () => {
         const activeUsers = mockUsers.filter(user => user.status === 'active');
         
         let mostRecentDate = moment('2000-01-01');
@@ -69,13 +73,14 @@ describe('Funciones de Datos Correlacionadas - Lodash y Moment', () => {
 
 
 describe('Función de Carga Pesada (calculateHeavyMetric) - Prueba Lenta para Demostración', () => {
-    // Esta prueba sigue siendo intencionalmente lenta para que se aprecie el ahorro de CI/CD.
+
     test('Debe calcular la métrica pesada y la ejecución debe tomar tiempo', () => {
         const ITERATIONS_COUNT = 10000; 
         const START_TIME = Date.now();
         
         let finalResult = 0;
-        // Llamamos 5 veces para garantizar una ejecución lenta (ej. 5-10 segundos)
+
+        // Ejecuta la función varias veces para garantizar lentitud
         for (let i = 0; i < 5; i++) { 
             finalResult += calculateHeavyMetric(ITERATIONS_COUNT);
         }
@@ -88,5 +93,5 @@ describe('Función de Carga Pesada (calculateHeavyMetric) - Prueba Lenta para De
 
         console.log(`Tiempo total de ejecución de la prueba pesada: ${DURATION_MS}ms`);
 
-    }, 15000); // Mantenemos el timeout alto
+    }, 15000); // timeout de 15 segundos
 });

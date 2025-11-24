@@ -19,7 +19,7 @@ spec:
       containers:
       - name: node-app-container
         # ⚠️ IMAGEN ACTUAL: Versión 1.0 (Blue)
-        image: 885869691689.dkr.ecr.us-east-1.amazonaws.com/duoc-lab:v1.0 
+        image: $ECR_URI_V1
         ports:
         - containerPort: 3000
         imagePullPolicy: Always
@@ -62,7 +62,7 @@ spec:
       containers:
       - name: node-app-container
         # ⚠️ IMAGEN NUEVA: Versión 2.0 (Green)
-        image: 885869691689.dkr.ecr.us-east-1.amazonaws.com/duoc-lab:v2.0 
+        image: $ECR_URI_V2
         ports:
         - containerPort: 3000
         imagePullPolicy: Always

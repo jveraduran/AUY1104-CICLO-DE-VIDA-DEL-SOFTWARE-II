@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: node-app-container
-        image: 885869691689.dkr.ecr.us-east-1.amazonaws.com/duoc-lab:latest # REEMPLAZA POR TU IMAGEN
+        image: $ECR_URI_V1
         ports:
         - containerPort: 3000
         imagePullPolicy: Always

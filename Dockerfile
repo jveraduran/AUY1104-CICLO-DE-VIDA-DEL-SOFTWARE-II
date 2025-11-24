@@ -10,7 +10,11 @@ COPY index.js ./
 
 FROM node:20-slim AS production
 
+ARG BUILD_COLOR="Blue"
 ENV NODE_ENV production
+
+ENV APP_COLOR $BUILD_COLOR 
+
 WORKDIR /app
 
 COPY --from=build /app/node_modules ./node_modules

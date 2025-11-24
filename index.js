@@ -5,6 +5,12 @@ const _ = require('lodash'); // Nueva dependencia
 const app = express();
 const port = 3000;
 
+// 💡 CLAVE: Registra el momento en que la aplicación inicia.
+/**
+const startTime = Date.now();
+const errorDelaySeconds = 120; // 2 minutos
+*/
+
 /**
  * Calculates a complex, synthetic metric (slow operation).
  * This function is intentionally designed to be CPU-bound for testing CI duration.
@@ -48,10 +54,13 @@ function prepareData(users) {
  * @returns {string} El mensaje de saludo.
  */
 function greet(name) {
+    // 💡 CLAVE: Lee la variable de entorno 'APP_COLOR' inyectada en el Dockerfile.
+    const appColor = process.env.APP_COLOR || "Mundo"; 
+
     if (!name) {
-        return "Hola, mundo!";
+        return `Hola! Soy ${appColor}`; // Mensaje modificado
     }
-    return `Hola, ${name}! Bienvenido a CI/CD.`;
+    return `Hola, ${name}! Bienvenido a CI/CD. (Desde ${appColor})`; // Mensaje modificado
 }
 
 // Exporta las funciones para poder ser probadas

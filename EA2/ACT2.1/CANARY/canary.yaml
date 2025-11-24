@@ -30,7 +30,7 @@ metadata:
     app: duoc-app
 spec:
   # 💡 CLAVE: 9 réplicas para el 90% del tráfico (9 de 10 Pods totales)
-  replicas: 9
+  replicas: 2
   selector:
     matchLabels:
       app: duoc-app
@@ -44,7 +44,7 @@ spec:
       containers:
       - name: node-app-container
         # ⚠️ REEMPLAZA: Usa tu imagen de producción V1.0 aquí
-        image: 885869691689.dkr.ecr.us-east-1.amazonaws.com/duoc-lab:v1.0 
+        image: $ECR_URI_V1
         ports:
         - containerPort: 3000
         imagePullPolicy: Always
@@ -75,7 +75,7 @@ spec:
       containers:
       - name: node-app-container
         # ⚠️ REEMPLAZA: Usa la nueva imagen V2.0 (Canary) aquí
-        image: 885869691689.dkr.ecr.us-east-1.amazonaws.com/duoc-lab:v2.0 
+        image: $ECR_URI_V2
         ports:
         - containerPort: 3000
         imagePullPolicy: Always

@@ -121,26 +121,38 @@ Definiremos variables de tag para mantener la imagen organizada y la subiremos a
 export ACCOUNT_ID="" # Reemplaza con tu Account ID
 export REGION="us-east-1"
 export REPO_NAME="duoc-lab"
-export LOCAL_TAG="duoc-app:latest"
-export ECR_URI="$ACCOUNT_ID.dkr.ecr.$[REGION.amazonaws.com/$REPO_NAME:$LOCAL_TAG](https://REGION.amazonaws.com/$REPO_NAME:$LOCAL_TAG)"
+export IMAGE_TAG_V1="v1.0"
+export ECR_URI_V1="$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG_V1"
+export IMAGE_TAG_V2="v2.0"
+export ECR_URI_V2="$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG_V2"
+
+echo "URI V1 (Stable/Blue): $ECR_URI_V1"
+echo "URI V2 (Canary/Green): $ECR_URI_V2"
 ```
 
-#### 1. Construir la imagen de Docker usando el Dockerfile en el directorio actual
+#### 1. Construir la imagen de Docker usando el Dockerfile en el directorio actual (Para Canary | Blue Green)
+
 ```bash
-sudo docker build -t $LOCAL_TAG .
-echo "Imagen local construida con el tag: $LOCAL_TAG"
+sudo docker build -t $IMAGE_TAG_V1 --build-arg BUILD_COLOR="Blue" .
+echo "Imagen local V1.0 construida con el tag: $IMAGE_TAG_V1"
+sudo docker build -t $IMAGE_TAG_V2 --build-arg BUILD_COLOR="Green" .
+echo "Imagen local V2.0 construida con el tag: $IMAGE_TAG_V2"
 ```
 
 #### 2. Etiquetar la imagen local con la URI completa de ECR
 ```bash
-sudo docker tag $LOCAL_TAG $ECR_URI
-echo "Imagen etiquetada como: $ECR_URI"
+sudo docker tag $IMAGE_TAG_V1 $ECR_URI_V1
+echo "Imagen V1.0 etiquetada como: $ECR_URI_V1"
+sudo docker tag $IMAGE_TAG_V2 $ECR_URI_V2
+echo "Imagen V2.0 etiquetada como: $ECR_URI_V2"
 ```
 
 #### 3. Subir (Push) la imagen a ECR
 ```bash
-sudo docker push $ECR_URI
-echo "¡Push a ECR completado! La imagen ya está disponible en $ECR_URI."
+sudo docker push $ECR_URI_V1
+echo "¡Push a ECR completado! V1.0 ya está disponible en $ECR_URI_V1."
+sudo docker push $ECR_URI_V2
+echo "¡Push a ECR completado! V2.0 ya está disponible en $ECR_URI_V2."
 ```
 
 ## 3️⃣ Creación de EKS con AWS CLI
@@ -203,11 +215,11 @@ kubectl get nodes -o wide
 ```
 
 ### 4.2. Despliegue de la Aplicación - Rolling Update
-Revisa que tengas un archivo YAML (deployment.yaml o similar) que define tu Deployment y Service (LoadBalancer):
+Revisa que tengas un archivo YAML (deployment.yaml o similar) que define tu Deployment y Service (LoadBalancer). Adicionalmente, en cada manifiesto, deberás reemplazar el valor de ```$ECR_URI_V1 | $ECR_URI_V1```, por los valores de tus imagenes en ECR.
 
 #### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
-kubectl apply -f app-deployment.yaml
+kubectl apply -f ROLLING-UPDATE/rolling-update.yaml
 ```
 
 #### 2. Verificar los recursos desplegados
@@ -221,17 +233,106 @@ Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de
 
 ### 4.3 Despliegue de la Aplicación - All-In-Once
 
-#### 1. Cambia el selector del Service de 'version: blue' a 'version: green'
+#### 1. Aplicar el manifiesto de Deployment y Service
+```bash
+kubectl apply -f ALL-IN-ONCE/all-in-once.yaml
+```
 
-Ida
+#### 2. Verificar los recursos desplegados
 ```bash
-kubectl patch service duoc-app-bg-service -p '{"spec": {"selector": {"version": "green"}}}'
+kubectl get pods
+kubectl get svc
 ```
-Vuelta
-```bash
-kubectl patch service duoc-app-bg-service -p '{"spec": {"selector": {"version": "blue"}}}'
-```
+
+#### 3. Acceso y Verificación del Servicio
+Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de la Public DNS, que se obtiene posterior a la ejecución del comando ```kubetl get svc``` como ```ID.us-east-1.elb.amazonaws.com``` 
+
 
 ### 4.4 Despliegue de la Aplicación - Canary
 
+#### 1. Aplicar el manifiesto de Deployment y Service
+```bash
+kubectl apply -f CANARY/canary.yaml
+```
+
+#### 2. Verificar los recursos desplegados
+```bash
+# Verifica el estado de los Pods (deberías ver 3, dos de V1 y uno de V2)
+kubectl get pods -l app=duoc-app 
+# Verifica los Deployments
+kubectl get deployments
+# Verifica el Service y obtén el Public DNS del LoadBalancer
+kubectl get svc duoc-app-canary-service
+```
+
+#### 3. Acceso y Verificación del Servicio
+Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de la Public DNS, que se obtiene posterior a la ejecución del comando ```kubetl get svc``` como ```ID.us-east-1.elb.amazonaws.com``` . Una vez que obtengas el EXTERNAL-IP (el CNAME del LoadBalancer) del servicio duoc-app-canary-service, realiza múltiples peticiones para observar el reparto de tráfico 2:1. Identifica la URL: Obtén el CNAME del LoadBalancer (ej: a1b2c3d4e5f6g7h8.us-east-1.elb.amazonaws.com).
+
+Ejecuta varias peticiones (puedes usar curl o un navegador y recargar) para ver qué versión responde.
+
+Deberías ver que, aproximadamente, 8 de cada 12 respuestas dicen: "Hola! Soy Blue" (V1.0), y 4 de cada 12 respuestas dicen: "Hola! Soy Green" (V2.0). Esta proporción confirma que el tráfico se está dividiendo según la cantidad de réplicas.
+
+#### 4. Promoción o Rollback
+
+**Opción A:** Promoción (Si es estable)
+Para promover V2.0 al 100% del tráfico, editas el Deployment de la versión estable (duoc-app-stable-v1) y reduces sus réplicas a 0. Luego, editas el Deployment Canary (duoc-app-canary-v2) y aumentas sus réplicas al total deseado (ej: 3).
+
+```bash
+# Reduce las réplicas V1 a 0 (eliminando el entorno antiguo)
+kubectl scale deployment duoc-app-stable-v1 --replicas=0
+
+# Escala las réplicas V2 a 3 (entorno nuevo al 100%)
+kubectl scale deployment duoc-app-canary-v2 --replicas=3
+```
+
+**Opción B:** Rollback (Si falla)
+Para un rollback instantáneo, simplemente editas el Deployment Canary (duoc-app-canary-v2) y reduces sus réplicas a 0. El 100% del tráfico restante será atendido por la versión V1.
+
+Si quisieramos forzar un error, debieramos modificar en el archivo index.js descomentando las lineas 10-11, para forzar un error despues de 2 minutos, y volver a compilar la V2.
+
+```bash
+const startTime = Date.now();
+const errorDelaySeconds = 120; // 2 minutos
+```
+
+```bash
+# Reduce las réplicas V2 a 0 (eliminando el Canary fallido)
+kubectl scale deployment duoc-app-canary-v2 --replicas=0
+```
+
 ### 4.4 Despliegue de la Aplicación - Blue/Green
+
+#### 1. Aplicar el manifiesto de Deployment y Service
+```bash
+kubectl apply -f BLUE-GREEN/blue-green.yaml
+```
+#### 2. Verificar el Estado Inicial
+Asegúrate de que ambos Pods están Running y obtén la URL pública.
+
+```bash
+# Deberías ver 1 Pod 'duoc-app-blue' y 1 Pod 'duoc-app-green'
+kubectl get pods
+
+# Obtén la URL del LoadBalancer (EXTERNAL-IP/CNAME)
+kubectl get svc duoc-app-bg-service
+```
+
+#### 3. Prueba de Control (Verificar Blue)
+Verifica que el tráfico público llega solo a la versión Blue. Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de la Public DNS, que se obtiene posterior a la ejecución del comando ```kubetl get svc``` como ```ID.us-east-1.elb.amazonaws.com``` . Una vez que obtengas el EXTERNAL-IP (el CNAME del LoadBalancer) del servicio duoc-app-bg-service. **Resultado Esperado:** Hola! Soy Blue (Confirmación: Blue está en vivo).
+
+#### 4. Realizar el Switch a Green (Ida)
+Ahora realizaremos el cambio de selector del Service.
+
+```bash
+# Cambia el selector del Service de 'blue' a 'green'
+kubectl patch service duoc-app-bg-service -p '{"spec": {"selector": {"version": "green"}}}'
+```
+Verifica que el tráfico público llega solo a la versión Blue. Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de la Public DNS, que se obtiene posterior a la ejecución del comando ```kubetl get svc``` como ```ID.us-east-1.elb.amazonaws.com``` . Una vez que obtengas el EXTERNAL-IP (el CNAME del LoadBalancer) del servicio duoc-app-bg-service. **Resultado Esperado:** Hola! Soy Green (Confirmación: Green está en vivo).
+
+#### 5. Realizar el Switch a Blue (Vuelta)
+Ahora realizaremos el cambio de selector del Service.
+
+```bash
+kubectl patch service duoc-app-bg-service -p '{"spec": {"selector": {"version": "blue"}}}'
+```
+Verifica que el tráfico público llega solo a la versión Blue. Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de la Public DNS, que se obtiene posterior a la ejecución del comando ```kubetl get svc``` como ```ID.us-east-1.elb.amazonaws.com``` . Una vez que obtengas el EXTERNAL-IP (el CNAME del LoadBalancer) del servicio duoc-app-bg-service. **Resultado Esperado:** Hola! Soy Blue (Confirmación: Blue está en vivo).
