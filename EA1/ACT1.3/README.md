@@ -28,7 +28,9 @@ Trabajaremos en construir un pipeline, con distintas opciones disponibles, para 
 
 ------------------------------------------------------------------------
 
-1. 🎯 Adaptación de Triggers (on)
+# Construcción
+
+## 1. 🎯 Adaptación de Triggers (on)
 La plantilla actual está diseñada para master (producción). Para un entorno de Staging o Desarrollo, debemos cambiar la rama:
 
 | Tarea de Ajuste | Plantilla Original | Plantilla Adaptada (Staging/Develop) |
@@ -44,7 +46,7 @@ on:
       - develop # La integración continua ahora se ejecuta en develop
 ```
 
-2. 🛡️ Adaptación de Condicionales (if)
+## 2. 🛡️ Adaptación de Condicionales (if)
 Utiliza el if para controlar pasos sensibles, como la subida a ECR.
 
 Escenario: Queremos que el job de Contenerización y Registro solo se ejecute cuando se hace un push directo a la rama (no durante una revisión de pull_request).
@@ -57,7 +59,7 @@ jobs:
     # ... resto del job
 ```
 
-3. 🔑 Ajuste de Variables y Secretos
+## 3. 🔑 Ajuste de Variables y Secretos
 Para el nuevo proyecto o entorno, es obligatorio actualizar las variables sensibles y de configuración:
 
 | Variable/Secreto | Propósito de la Modificación |
@@ -70,10 +72,10 @@ Aquí tienes la sección de documentación y la explicación técnica del ciclo 
 
 He integrado los fragmentos de código YAML proporcionados para ilustrar exactamente dónde y cómo se implementa la estrategia de caché tanto para dependencias de Node.js como para capas de Docker.
 
-4. 📝 Tarea de Documentación y Validación Práctica
+## 4. 📝 Tarea de Documentación y Validación Práctica
 Como parte del entregable final, el estudiante debe documentar los parámetros definidos y realizar una validación práctica del pipeline ajustado.
 
-1. Validación Práctica
+### 4.1. Validación Práctica
 
 Ejecuta el pipeline original y luego el ajustado (con caché).
 
@@ -81,7 +83,7 @@ Compara los tiempos de ejecución (Duration) en la pestaña "Actions" de GitHub.
 
 Pregunta a responder: ¿Se redujo el tiempo total al cambiar los triggers o al reutilizar la caché en la segunda ejecución?
 
-2. Documentación Requerida
+### 4.2. Documentación Requerida
 
 Explica el propósito y alcance de la nueva rama configurada (ej. develop vs master).
 
