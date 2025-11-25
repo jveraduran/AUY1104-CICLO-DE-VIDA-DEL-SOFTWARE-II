@@ -286,7 +286,7 @@ kubectl scale deployment duoc-app-stable-v1 --replicas=0
 kubectl scale deployment duoc-app-canary-v2 --replicas=3
 ```
 
-### 4.4 Despliegue de la Aplicación - Blue/Green
+### 4.5 Despliegue de la Aplicación - Blue/Green
 
 #### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
