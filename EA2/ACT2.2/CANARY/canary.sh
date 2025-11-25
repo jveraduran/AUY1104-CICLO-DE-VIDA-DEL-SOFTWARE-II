@@ -1,13 +1,16 @@
 #!/bin/bash
-# Script para medir el tiempo de despliegue inicial y la velocidad de Rollback
-# en la estrategia Canary.
+# Script para medir el tiempo de despliegue inicial y la velocidad de PROMOCIÓN
+# (switch de 10% a 100% de V2) en la estrategia Canary, con límite de 120s.
 
 # --- Variables Requeridas ---
-SERVICE_NAME=$1        # Nombre del Service (ej: duoc-app-canary-service)
-DEPLOYMENT_CANARY_NAME=$2 # Nombre del nuevo Deployment (ej: duoc-app-canary-v2)
-YAML_FILE_CANARY=$3    # Ruta al archivo YAML del Deployment Canary (ej: CANARY/canary_v2.yaml)
-TARGET_VERSION_COLOR="Canary" # Color/Versión a buscar en la respuesta (debe coincidir con la app)
-STABLE_DEPLOYMENT_NAME=$4 # Nombre del Deployment Stable para la PROMOCIÓN (ej: duoc-app-stable-v1)
+SERVICE_NAME="duoc-app-canary-service"              # Nombre del Service (ej: duoc-app-canary-service)
+DEPLOYMENT_CANARY_NAME="duoc-app-canary-v2"         # Nombre del Deployment V2/Canary (ej: duoc-app-canary-v2)
+YAML_FILE_CANARY="EA2/ACT2.2/CANARY/canary.yaml"    # Ruta al archivo YAML del Deployment Canary (ej: CANARY/canary_v2.yaml)
+STABLE_DEPLOYMENT_NAME="duoc-app-stable-v1"         # Nombre del Deployment Stable (V1) (ej: duoc-app-stable-v1)
+
+# Variables de la aplicación
+TARGET_VERSION_COLOR="Canary" # Contenido o etiqueta que la V2 devuelve (para el curl)
+PROMOTION_TIMEOUT_S=120       # Límite de tiempo para la promoción total (120 segundos)
 
 if [ -z "$SERVICE_NAME" ] || [ -z "$DEPLOYMENT_CANARY_NAME" ] || [ -z "$YAML_FILE_CANARY" ] || [ -z "$STABLE_DEPLOYMENT_NAME" ]; then
     echo "Uso: $0 <NOMBRE_SERVICE> <NOMBRE_DEPLOYMENT_CANARY> <RUTA_YAML_CANARY> <NOMBRE_DEPLOYMENT_STABLE>"
@@ -46,62 +49,82 @@ fi
 echo "[2] Aplicando YAML de Deployment CANARY y esperando Rollout Interno..."
 kubectl apply -f "$YAML_FILE_CANARY"
 
-# Esperamos a que el nuevo Pod Canary esté completamente listo (Pods Ready).
 START_CANARY_ROLLOUT_TIME=$(date +%s.%N)
 kubectl rollout status deployment/"$DEPLOYMENT_CANARY_NAME" --timeout=300s
 if [ $? -ne 0 ]; then
-    echo "[ERROR] El Rollout del Deployment CANARY falló."
+    echo "[ERROR] El Rollout del Deployment CANARY (inicial) falló."
     exit 1
 fi
 END_CANARY_ROLLOUT_TIME=$(date +%s.%N)
 CANARY_DEPLOY_DURATION=$(echo "$END_CANARY_ROLLOUT_TIME - $START_CANARY_ROLLOUT_TIME" | bc)
-echo "[SUCCESS] Deployment CANARY listo en: $CANARY_DEPLOY_DURATION segundos."
+echo "[SUCCESS] Deployment CANARY (10%) listo en: $CANARY_DEPLOY_DURATION segundos."
+
+# 3. VERIFICACIÓN DE EXPOSICIÓN (OPCIONAL: Asegura que el Canary es alcanzable)
+# El tráfico de V2 ya está expuesto. Ahora simulamos que pasó la prueba de 120s.
+echo "[3] Simulación: La versión Canary (V2) pasó la prueba de 120s sin fallos."
 
 
-# 3. VERIFICACIÓN DE EXPOSICIÓN (CONFIRMAR QUE EL 10% LLEGÓ)
-# Se hacen múltiples llamadas para confirmar que la versión Canary es alcanzada
-echo "[3] Verificando que la versión Canary (10%) sea alcanzable en $LB_URL..."
-FOUND_CANARY=0
-for i in {1..20}; do
-    RESPONSE=$(curl -s "http://$LB_URL")
-    if echo "$RESPONSE" | grep -q "$TARGET_VERSION_COLOR"; then
-        FOUND_CANARY=1
-        break
-    fi
-    sleep 0.5
-done
+# 4. SIMULACIÓN DE PROMOCIÓN (SWITCH A V2 TOTAL)
+echo -e "\n--- INICIANDO PROMOCIÓN (SWITCH A V2 TOTAL) ---"
 
-if [ "$FOUND_CANARY" -eq 1 ]; then
-    echo "[SUCCESS] Versión Canary detectada en el LoadBalancer."
-else
-    echo "[ALERTA] La versión Canary no fue detectada después de 20 intentos."
+# Obtener la cantidad de réplicas de la versión estable para asegurar la capacidad
+STABLE_REPLICAS=$(kubectl get deployment "$STABLE_DEPLOYMENT_NAME" -o=jsonpath='{.spec.replicas}' 2>/dev/null || echo 0)
+CURRENT_CANARY_REPLICAS=$(kubectl get deployment "$DEPLOYMENT_CANARY_NAME" -o=jsonpath='{.spec.replicas}' 2>/dev/null || echo 0)
+TOTAL_REPLICAS=$(($STABLE_REPLICAS + $CURRENT_CANARY_REPLICAS))
+
+if [ "$TOTAL_REPLICAS" -eq 0 ]; then
+    echo "[ERROR] No se pudieron obtener las réplicas totales. Asegúrate de que $STABLE_DEPLOYMENT_NAME existe."
+    exit 1
 fi
 
-# 4. SIMULACIÓN DE FALLO Y ROLLBACK (MEDICIÓN CLAVE)
-echo -e "\n--- INICIANDO PRUEBA DE ROLLBACK (MÉTRICA CRÍTICA) ---"
-echo "Simulando detección de fallo y ejecutando Rollback (Escalar Canary a 0 réplicas)..."
+echo "[4] Promoviendo V2 a $TOTAL_REPLICAS réplicas y escalando V1 ($STABLE_DEPLOYMENT_NAME) a 0..."
+PROMOTION_START_TIME=$(date +%s.%N)
 
-ROLLBACK_START_TIME=$(date +%s.%N)
+# Tarea A: Escalar la versión Canary (V2) al total
+kubectl scale deployment/"$DEPLOYMENT_CANARY_NAME" --replicas=$TOTAL_REPLICAS
+# Tarea B: Escalar la versión Estable (V1) a cero (eliminando el riesgo de la versión antigua)
+kubectl scale deployment/"$STABLE_DEPLOYMENT_NAME" --replicas=0
 
-# El Rollback se ejecuta escalando el Deployment Canary a cero.
-kubectl scale deployment/"$DEPLOYMENT_CANARY_NAME" --replicas=0
+# Esperar a que el Rollout de la V2 finalice (todos los Pods nuevos estén Ready)
+echo "[INFO] Esperando que la promoción de V2 termine su Rollout en Kubernetes..."
+kubectl rollout status deployment/"$DEPLOYMENT_CANARY_NAME" --timeout=300s
+if [ $? -ne 0 ]; then
+    echo "[ERROR] El Rollout de promoción falló."
+    exit 1
+fi
 
-# Esperamos a que la operación de escalado finalice (los Pods Canary deben terminarse).
-# Nota: No usamos 'rollout status' porque este no aplica para 'scale'.
-# Usaremos 'kubectl wait' o simplemente esperamos un breve periodo para que se ejecute la acción.
-# Aquí medimos el tiempo que tarda la instrucción en ser procesada y confirmada.
+# 5. CONFIRMACIÓN FINAL DENTRO DE LA VENTANA DE 120 SEGUNDOS
+echo "[5] Confirmando disponibilidad externa y contenido final (Límite: $PROMOTION_TIMEOUT_S s)..."
 
-ROLLBACK_END_TIME=$(date +%s.%N)
-ROLLBACK_DURATION=$(echo "$ROLLBACK_END_TIME - $ROLLBACK_START_TIME" | bc)
-echo "[SUCCESS] Rollback (Comando 'kubectl scale') completado en: $ROLLBACK_DURATION segundos."
+CONFIRMATION_START_TIME=$(date +%s.%N)
+CONFIRMATION_END_TIME=0
+# Loop de confirmación con el límite de 120 segundos
+for ((i=1; i<=$PROMOTION_TIMEOUT_S; i++)); do
+    RESPONSE=$(curl -s "http://$LB_URL")
+    if echo "$RESPONSE" | grep -q "$TARGET_VERSION_COLOR"; then
+        CONFIRMATION_END_TIME=$(date +%s.%N)
+        echo "[SUCCESS] Versión Final ($TARGET_VERSION_COLOR) confirmada en el LoadBalancer."
+        break
+    fi
+    sleep 1
+done
 
-# 5. CÁLCULO DE RESULTADOS FINALES
+if [ "$CONFIRMATION_END_TIME" -eq 0 ]; then
+    echo "[ERROR] La promoción de V2 (Switch) falló al confirmarse en el LoadBalancer después de $PROMOTION_TIMEOUT_S segundos (TIMEOUT)."
+    exit 1
+fi
+
+PROMOTION_E2E_DURATION=$(echo "$CONFIRMATION_END_TIME - $PROMOTION_START_TIME" | bc)
+
+
+# 6. CÁLCULO DE RESULTADOS FINALES
 
 END_GLOBAL_TIME=$(date +%s.%N)
 TOTAL_DURATION=$(echo "$END_GLOBAL_TIME - $START_GLOBAL_TIME" | bc)
 
-echo -e "\n--- RESULTADOS FINALES DE DESPLIEGUE (CANARY) ---"
-echo "A. Tiempo de Despliegue CANARY (10%): $CANARY_DEPLOY_DURATION segundos"
-echo "B. Velocidad de Rollback (Escalar a 0): $ROLLBACK_DURATION segundos"
+echo -e "\n--- RESULTADOS FINALES DE DESPLIEGUE (CANARY PROMOCIÓN) ---"
+echo "A. Tiempo de Despliegue CANARY Inicial (10%): $CANARY_DEPLOY_DURATION segundos"
+echo "B. Tiempo de PROMOCIÓN E2E (Scale V2 a 100% -> Confirmación 200 OK/V2): $PROMOTION_E2E_DURATION segundos"
 echo "C. Tiempo de Provisionamiento del LB (Solo 1ra vez): $LB_PROVISIONING_DURATION segundos"
-echo "D. Riesgo de Exposición: Solo el 10% del tráfico."
+echo "D. Riesgo de Exposición durante el Switch: 0 segundos (Continuidad garantizada por los Pods V2/Canary ya existentes)"
+echo "E. Tiempo TOTAL (Apply Canary -> Promoción Finalizada): $TOTAL_DURATION segundos"

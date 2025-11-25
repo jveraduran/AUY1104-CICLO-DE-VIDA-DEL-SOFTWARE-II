@@ -2,10 +2,10 @@
 # Script para medir el tiempo total de despliegue desde kubectl apply hasta la disponibilidad del LoadBalancer (200 OK).
 
 # --- Variables Requeridas ---
-SERVICE_NAME=$1        # Nombre del Service (ej: duoc-app-service)
-DEPLOYMENT_NAME=$2     # Nombre del Deployment principal (ej: duoc-app-deployment)
-YAML_FILE=$3           # Ruta al archivo YAML de la nueva versión (ej: ROLLING-UPDATE/v2.yaml)
-STRATEGY=$4            # Estrategia a medir (ej: rolling-update)
+SERVICE_NAME="duoc-app-service"                                   # Nombre del Service (ej: duoc-app-service)
+DEPLOYMENT_NAME="duoc-app-deployment"                             # Nombre del Deployment principal (ej: duoc-app-deployment)
+YAML_FILE="EA2/ACT2.2/ROLLING-UPDATE/rolling-update.yaml"         # Ruta al archivo YAML de la nueva versión (ej: ROLLING-UPDATE/v2.yaml)
+STRATEGY="rolling-update"                                         # Estrategia a medir (ej: rolling-update)
 
 if [ -z "$SERVICE_NAME" ] || [ -z "$DEPLOYMENT_NAME" ] || [ -z "$YAML_FILE" ]; then
     echo "Uso: $0 <NOMBRE_SERVICE> <NOMBRE_DEPLOYMENT> <RUTA_YAML> [ESTRATEGIA]"
@@ -32,13 +32,20 @@ echo "[2] Esperando que AWS asigne el hostname al LoadBalancer del Service ($SER
 # Obtener la URL externa. El loop espera hasta que la URL no sea <pending>.
 LB_URL=""
 START_LB_PROVISIONING=$(date +%s.%N) # <-- INICIO de medición de aprovisionamiento
-# El timeout de 120s es solo para la obtención del hostname, no para el despliegue.
+
+# Cambiamos el límite de espera a 120 segundos, como en la versión anterior.
 for i in {1..120}; do
-    LB_URL=$(kubectl get service "$SERVICE_NAME" -o=jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-    if [ ! -z "$LB_URL" ]; then
+    # Intenta obtener el hostname. La opción -o=jsonpath puede devolver una cadena vacía si no existe el campo.
+    # El comando tr se usa para limpiar cualquier carácter de control o salto de línea.
+    TEMP_LB_URL=$(kubectl get service "$SERVICE_NAME" -o=jsonpath='{.status.loadBalancer.ingress[0].hostname}' | tr -d '\n')
+    
+    # Verificamos si la URL no está vacía.
+    if [ ! -z "$TEMP_LB_URL" ]; then
+        LB_URL="$TEMP_LB_URL" # Asignamos la URL si se encontró
         echo "[SUCCESS] Hostname de LoadBalancer obtenido: http://$LB_URL"
         break
     fi
+    # Si la URL sigue siendo vacía, el bucle continúa y espera 1 segundo.
     sleep 1
 done
 

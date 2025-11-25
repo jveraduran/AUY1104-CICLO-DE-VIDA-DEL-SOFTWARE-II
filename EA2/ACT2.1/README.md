@@ -53,7 +53,7 @@ sudo apt-get install -y ca-certificates curl gnupg
 #### 2. Agregar la clave GPG y el repositorio de Kubernetes
 ```bash
 sudo mkdir -p -m 755 /etc/apt/keyrings
-curl -fsSL [https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key](https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key) | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+sudo curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 ```
 
 #### Definir el repositorio para la versión 1.30
@@ -64,7 +64,7 @@ echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] [https://pkgs
 #### 3. Instalar kubectl
 ```bash
 sudo apt-get update
-sudo apt-get install -y kubectl
+sudo apt-get install -y kubectl bc
 ```
 
 ### 1.3. Instalación de Eksctl (Opcional pero Recomendado)
@@ -137,6 +137,7 @@ sudo docker build -t $IMAGE_TAG_V1 --build-arg BUILD_COLOR="Blue" .
 echo "Imagen local V1.0 construida con el tag: $IMAGE_TAG_V1"
 sudo docker build -t $IMAGE_TAG_V2 --build-arg BUILD_COLOR="Green" .
 echo "Imagen local V2.0 construida con el tag: $IMAGE_TAG_V2"
+sudo docker images
 ```
 
 #### 2. Etiquetar la imagen local con la URI completa de ECR
@@ -145,6 +146,7 @@ sudo docker tag $IMAGE_TAG_V1 $ECR_URI_V1
 echo "Imagen V1.0 etiquetada como: $ECR_URI_V1"
 sudo docker tag $IMAGE_TAG_V2 $ECR_URI_V2
 echo "Imagen V2.0 etiquetada como: $ECR_URI_V2"
+sudo docker images
 ```
 
 #### 3. Subir (Push) la imagen a ECR
@@ -211,7 +213,7 @@ aws eks update-kubeconfig --name duoc-eks-cluster-cli --region us-east-1
 
 #### 2. Verifica que los nodos estén en estado Ready (esto puede tardar unos minutos)
 ```bash
-kubectl get nodes -o wide
+kubectl get nodes -o wide -w
 ```
 
 ### 4.2. Despliegue de la Aplicación - Rolling Update
@@ -219,7 +221,7 @@ Revisa que tengas un archivo YAML (deployment.yaml o similar) que define tu Depl
 
 #### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
-kubectl apply -f ROLLING-UPDATE/rolling-update.yaml
+kubectl apply -f EA2/ACT2.2/ROLLING-UPDATE/rolling-update.yaml
 ```
 
 #### 2. Verificar los recursos desplegados
@@ -235,7 +237,7 @@ Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de
 
 #### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
-kubectl apply -f ALL-IN-ONCE/all-in-once.yaml
+kubectl apply -f EA2/ACT2.2/ALL-IN-ONCE/all-in-once.yaml
 ```
 
 #### 2. Verificar los recursos desplegados
@@ -272,9 +274,8 @@ Ejecuta varias peticiones (puedes usar curl o un navegador y recargar) para ver 
 
 Deberías ver que, aproximadamente, 8 de cada 12 respuestas dicen: "Hola! Soy Blue" (V1.0), y 4 de cada 12 respuestas dicen: "Hola! Soy Green" (V2.0). Esta proporción confirma que el tráfico se está dividiendo según la cantidad de réplicas.
 
-#### 4. Promoción o Rollback
+#### 4. Promoción
 
-**Opción A:** Promoción (Si es estable)
 Para promover V2.0 al 100% del tráfico, editas el Deployment de la versión estable (duoc-app-stable-v1) y reduces sus réplicas a 0. Luego, editas el Deployment Canary (duoc-app-canary-v2) y aumentas sus réplicas al total deseado (ej: 3).
 
 ```bash
@@ -283,21 +284,6 @@ kubectl scale deployment duoc-app-stable-v1 --replicas=0
 
 # Escala las réplicas V2 a 3 (entorno nuevo al 100%)
 kubectl scale deployment duoc-app-canary-v2 --replicas=3
-```
-
-**Opción B:** Rollback (Si falla)
-Para un rollback instantáneo, simplemente editas el Deployment Canary (duoc-app-canary-v2) y reduces sus réplicas a 0. El 100% del tráfico restante será atendido por la versión V1.
-
-Si quisieramos forzar un error, debieramos modificar en el archivo index.js descomentando las lineas 10-11, para forzar un error despues de 2 minutos, y volver a compilar la V2.
-
-```bash
-const startTime = Date.now();
-const errorDelaySeconds = 120; // 2 minutos
-```
-
-```bash
-# Reduce las réplicas V2 a 0 (eliminando el Canary fallido)
-kubectl scale deployment duoc-app-canary-v2 --replicas=0
 ```
 
 ### 4.4 Despliegue de la Aplicación - Blue/Green
@@ -328,11 +314,3 @@ Ahora realizaremos el cambio de selector del Service.
 kubectl patch service duoc-app-bg-service -p '{"spec": {"selector": {"version": "green"}}}'
 ```
 Verifica que el tráfico público llega solo a la versión Blue. Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de la Public DNS, que se obtiene posterior a la ejecución del comando ```kubetl get svc``` como ```ID.us-east-1.elb.amazonaws.com``` . Una vez que obtengas el EXTERNAL-IP (el CNAME del LoadBalancer) del servicio duoc-app-bg-service. **Resultado Esperado:** Hola! Soy Green (Confirmación: Green está en vivo).
-
-#### 5. Realizar el Switch a Blue (Vuelta)
-Ahora realizaremos el cambio de selector del Service.
-
-```bash
-kubectl patch service duoc-app-bg-service -p '{"spec": {"selector": {"version": "blue"}}}'
-```
-Verifica que el tráfico público llega solo a la versión Blue. Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de la Public DNS, que se obtiene posterior a la ejecución del comando ```kubetl get svc``` como ```ID.us-east-1.elb.amazonaws.com``` . Una vez que obtengas el EXTERNAL-IP (el CNAME del LoadBalancer) del servicio duoc-app-bg-service. **Resultado Esperado:** Hola! Soy Blue (Confirmación: Blue está en vivo).
