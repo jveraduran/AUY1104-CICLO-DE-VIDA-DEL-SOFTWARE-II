@@ -2,6 +2,40 @@
 
 Esta guía detalla los pasos de instalación de herramientas, autenticación en AWS y el despliegue de un clúster de Kubernetes (EKS) utilizando únicamente la AWS CLI.
 
+# 📌 **Índice**
+
+1.  🛠️ Pre-requisitos
+2.  ⚙️ Configuración de Entorno y Herramientas
+    * 2.1. Instalación de Docker y Componentes (Debian/Ubuntu)
+    * 2.2. Instalación de Kubectl (v1.30)
+    * 2.3. Instalación de Eksctl (Opcional)
+3.  ☁️ Autenticación y Configuración de AWS
+    * 3.1. Configuración de Credenciales AWS
+    * 3.2. Creación y Login en ECR (Elastic Container Registry)
+    * 3.3. Construcción, Etiquetado y Push de la Imagen
+4.  🚀 Creación de EKS con AWS CLI
+    * 4.1. Crear el Control Plane de EKS
+    * 4.2. Crear el Grupo de Nodos (Worker Nodes)
+5.  💻 Conexión y Despliegue en Kubernetes
+    * 5.1. Configurar Conexión Kubeconfig y Verificar Nodos
+    * 5.2. Despliegue de la Aplicación - Rolling Update
+    * 5.3. Despliegue de la Aplicación - All-In-Once
+    * 5.4. Despliegue de la Aplicación - Canary
+    * 5.5. Despliegue de la Aplicación - Blue/Green
+
+---
+
+# 🛠️ **Pre-requisitos**
+
+Antes de comenzar la guía, asegúrate de contar con lo siguiente:
+
+* **Sistema Operativo:** Un servidor o entorno de trabajo basado en **Debian/Ubuntu**.
+* **Permisos de Usuario:** Acceso a comandos `sudo` para la instalación de paquetes.
+* **Credenciales de AWS:** Un conjunto de credenciales (`ACCESS_KEY`, `SECRET_KEY`, `SESSION_TOKEN`) o credenciales de IAM con permisos suficientes para administrar recursos de **ECR** y **EKS**.
+* **Conectividad de Red:** IDs de las **Subredes Públicas** y **Privadas** de tu VPC para la configuración del clúster EKS.
+* **Archivos de Manifiesto:** Los archivos **YAML** necesarios para los despliegues (`rolling-update.yaml`, `all-in-once.yaml`, etc.) con los *placeholders* de la URI de ECR.
+
+
 ## 1️⃣ Configuración de Entorno y Herramientas
 
 Instalaremos las dependencias necesarias y las herramientas de línea de comandos para interactuar con Docker, Kubernetes y AWS.

@@ -2,6 +2,30 @@
 
 Para capturar la información, puedes volver a ejecutar los pasos de la Guía ACT2.2, y volver a capturar los tiempos y analizar con mas calma el comportamiento de cada estrategia.
 
+# 📌 **Índice del Informe Técnico**
+
+1.  Definición del Caso Práctico (Contexto)
+    * 1.1. Aplicación y Descripción
+    * 1.2. Restricciones Clave (Técnica, Legal/Compliance, Negocio)
+2.  Evaluación de Estrategias y Criterios
+    * 2.1. Criterios de Ponderación (Disponibilidad, Costo, Rollback, Exposición)
+    * 2.2. Matriz de Evaluación (Puntuación de 1 a 5)
+3.  Estrategia Seleccionada y Justificación
+    * 3.1. Justificación Técnica (Manejo de Restricción Crítica y Rollback)
+    * 3.2. Impacto en Continuidad Operativa y Agilidad
+4.  Análisis de Métricas y Conclusiones (Opcional: Incluir la tabla comparativa de tiempos)
+
+---
+
+# 🛠️ **Pre-requisitos para la Elaboración del Informe**
+
+Para completar el presente informe, se requiere la siguiente información y contexto:
+
+* **Resultados de la Guía ACT2.2 Completados:** Se debe haber ejecutado previamente la "Guía de Despliegue Continuo en AWS EKS" y contar con un clúster de Kubernetes activo y configurado.
+* **Métricas de Despliegue Capturadas:** Es fundamental disponer de los tiempos medidos (en segundos) para el **Rollout**, **Downtime**, **Propagación del Load Balancer** y **Switch de Servicio** para las cuatro estrategias analizadas (Rolling Update, All-in-Once, Canary y Blue/Green).
+* **Definición del Caso de Negocio:** La información de los *placeholders* en la Sección 1 (`Aplicación` y `Restricciones Clave`) debe estar claramente definida para poder ponderar los criterios de evaluación.
+
+
 ## 1. Definición del Caso Práctico (Contexto)
 
 **Aplicación:** [Nombre y descripción breve de la aplicación (Ej: Plataforma de e-commerce de alto tráfico, Microservicio de autenticación, Blog corporativo).]
