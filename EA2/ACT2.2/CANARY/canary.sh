@@ -3,14 +3,20 @@
 # (switch de 10% a 100% de V2) en la estrategia Canary, con límite de 120s.
 
 # --- Variables Requeridas ---
-SERVICE_NAME="duoc-app-canary-service"              # Nombre del Service (ej: duoc-app-canary-service)
-DEPLOYMENT_CANARY_NAME="duoc-app-canary-v2"         # Nombre del Deployment V2/Canary (ej: duoc-app-canary-v2)
-YAML_FILE_CANARY="EA2/ACT2.2/CANARY/canary.yaml"    # Ruta al archivo YAML del Deployment Canary (ej: CANARY/canary_v2.yaml)
-STABLE_DEPLOYMENT_NAME="duoc-app-stable-v1"         # Nombre del Deployment Stable (V1) (ej: duoc-app-stable-v1)
+SERVICE_NAME="duoc-app-canary-service"
+DEPLOYMENT_CANARY_NAME="duoc-app-canary-v2"
+YAML_FILE_CANARY="EA2/ACT2.2/CANARY/canary.yaml"
+STABLE_DEPLOYMENT_NAME="duoc-app-stable-v1"
 
 # Variables de la aplicación
-TARGET_VERSION_COLOR="Canary" # Contenido o etiqueta que la V2 devuelve (para el curl)
-PROMOTION_TIMEOUT_S=120       # Límite de tiempo para la promoción total (120 segundos)
+# ACTUALIZADO: Buscamos "Green" para validar el contenido de V2.
+TARGET_VERSION_COLOR="Green" 
+PROMOTION_TIMEOUT_S=120
+
+# Variables de tiempo inicializadas
+CONFIRMATION_END_TIME=0
+HTTP_STATUS=""
+RESPONSE=""
 
 if [ -z "$SERVICE_NAME" ] || [ -z "$DEPLOYMENT_CANARY_NAME" ] || [ -z "$YAML_FILE_CANARY" ] || [ -z "$STABLE_DEPLOYMENT_NAME" ]; then
     echo "Uso: $0 <NOMBRE_SERVICE> <NOMBRE_DEPLOYMENT_CANARY> <RUTA_YAML_CANARY> <NOMBRE_DEPLOYMENT_STABLE>"
@@ -28,7 +34,7 @@ echo "[1] Aprovisionando LoadBalancer y obteniendo URL..."
 LB_URL=""
 START_LB_PROVISIONING=$(date +%s.%N)
 for i in {1..120}; do
-    LB_URL=$(kubectl get service "$SERVICE_NAME" -o=jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+    LB_URL=$(kubectl get service "$SERVICE_NAME" -o=jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null)
     if [ ! -z "$LB_URL" ]; then
         echo "[SUCCESS] Hostname de LoadBalancer obtenido: http://$LB_URL"
         break
@@ -60,7 +66,6 @@ CANARY_DEPLOY_DURATION=$(echo "$END_CANARY_ROLLOUT_TIME - $START_CANARY_ROLLOUT_
 echo "[SUCCESS] Deployment CANARY (10%) listo en: $CANARY_DEPLOY_DURATION segundos."
 
 # 3. VERIFICACIÓN DE EXPOSICIÓN (OPCIONAL: Asegura que el Canary es alcanzable)
-# El tráfico de V2 ya está expuesto. Ahora simulamos que pasó la prueba de 120s.
 echo "[3] Simulación: La versión Canary (V2) pasó la prueba de 120s sin fallos."
 
 
@@ -97,30 +102,39 @@ fi
 echo "[5] Confirmando disponibilidad externa y contenido final (Límite: $PROMOTION_TIMEOUT_S s)..."
 
 CONFIRMATION_START_TIME=$(date +%s.%N)
-CONFIRMATION_END_TIME=0
-# Loop de confirmación con el límite de 120 segundos
-for ((i=1; i<=$PROMOTION_TIMEOUT_S; i++)); do
-    RESPONSE=$(curl -s "http://$LB_URL")
-    if echo "$RESPONSE" | grep -q "$TARGET_VERSION_COLOR"; then
-        CONFIRMATION_END_TIME=$(date +%s.%N)
-        echo "[SUCCESS] Versión Final ($TARGET_VERSION_COLOR) confirmada en el LoadBalancer."
-        break
+
+# Loop de confirmación robustecido
+i=1
+while [ $i -le $PROMOTION_TIMEOUT_S ]; do
+    # 5a. Verificamos el código de estado HTTP primero
+    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://$LB_URL" 2>/dev/null)
+    
+    if [ "$HTTP_STATUS" = "200" ]; then
+        # 5b. Si es 200 OK, obtenemos el contenido para verificar la versión
+        RESPONSE=$(curl -s "http://$LB_URL")
+        if echo "$RESPONSE" | grep -q "$TARGET_VERSION_COLOR"; then
+            CONFIRMATION_END_TIME=$(date +%s.%N)
+            echo "[SUCCESS] Versión Final ($TARGET_VERSION_COLOR) confirmada en el LoadBalancer."
+            break
+        fi
     fi
+    
     sleep 1
+    i=$((i + 1))
 done
 
-if [ "$CONFIRMATION_END_TIME" -eq 0 ]; then
-    echo "[ERROR] La promoción de V2 (Switch) falló al confirmarse en el LoadBalancer después de $PROMOTION_TIMEOUT_S segundos (TIMEOUT)."
-    exit 1
-fi
-
+# --- CÁLCULO DE DURACIONES FLOTANTES ANTES DE LA VALIDACIÓN DE FALLA ---
 PROMOTION_E2E_DURATION=$(echo "$CONFIRMATION_END_TIME - $PROMOTION_START_TIME" | bc)
-
-
-# 6. CÁLCULO DE RESULTADOS FINALES
-
 END_GLOBAL_TIME=$(date +%s.%N)
 TOTAL_DURATION=$(echo "$END_GLOBAL_TIME - $START_GLOBAL_TIME" | bc)
+
+# 6. VALIDACIÓN FINAL Y RESULTADOS
+# NOTA: Usamos 'bc' para una comparación numérica segura de la duración
+if [ $(echo "$PROMOTION_E2E_DURATION <= 0" | bc -l) -eq 1 ]; then
+    echo "[ERROR] La promoción de V2 (Switch) falló al confirmarse en el LoadBalancer después de $PROMOTION_TIMEOUT_S segundos (TIMEOUT)."
+    echo "[DIAGNÓSTICO] Última respuesta HTTP: $HTTP_STATUS. Último contenido (si existe): $RESPONSE"
+    exit 1
+fi
 
 echo -e "\n--- RESULTADOS FINALES DE DESPLIEGUE (CANARY PROMOCIÓN) ---"
 echo "A. Tiempo de Despliegue CANARY Inicial (10%): $CANARY_DEPLOY_DURATION segundos"

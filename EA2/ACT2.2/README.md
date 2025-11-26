@@ -223,6 +223,9 @@ Revisa que tengas un archivo YAML (deployment.yaml o similar) que define tu Depl
 
 #### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
+vi EA2/ACT2.2/ROLLING-UPDATE/rolling-update.yaml # Modifica primero la referencia a la imagen V1
+sh EA2/ACT2.2/ROLLING-UPDATE/rolling-update.sh
+vi EA2/ACT2.2/ROLLING-UPDATE/rolling-update.yaml # Modifica primero la referencia a la imagen V2
 sh EA2/ACT2.2/ROLLING-UPDATE/rolling-update.sh
 kubectl delete -f EA2/ACT2.2/ROLLING-UPDATE/rolling-update.yaml
 ```
@@ -244,6 +247,9 @@ Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de
 
 #### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
+vi EA2/ACT2.2/ALL-IN-ONCE/all-in-once.yaml # Modifica primero la referencia a la imagen V1
+sh EA2/ACT2.2/ALL-IN-ONCE/all-in-once.sh
+vi EA2/ACT2.2/ALL-IN-ONCE/all-in-once.yaml # Modifica primero la referencia a la imagen V2
 sh EA2/ACT2.2/ALL-IN-ONCE/all-in-once.sh
 kubectl delete -f EA2/ACT2.2/ALL-IN-ONCE/all-in-once.yaml
 ```
@@ -267,7 +273,11 @@ Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de
 ```bash
 vi EA2/ACT2.2/CANARY/canary.yaml # Modifica primero la referencia a la imagen.
 kubectl apply -f EA2/ACT2.2/CANARY/canary.yaml
+kubectl get pods
+kubectl get svc
+# Revisar en la url del balanceador que veamos Hola! Soy Blue.
 sh EA2/ACT2.2/CANARY/canary.sh
+kubectl delete -f EA2/ACT2.2/CANARY/canary.yaml
 ```
 
 #### 2. Verificar los resultados de las métricas:
@@ -284,7 +294,11 @@ echo "E. Tiempo TOTAL (Apply Canary -> Promoción Finalizada): $TOTAL_DURATION s
 #### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
 vi EA2/ACT2.2/BLUE-GREEN/blue-green.yaml # Modifica primero la referencia a la imagen.
+kubectl apply -f EA2/ACT2.2/BLUE-GREEN/blue-green.yaml
+kubectl get pods
+kubectl get svc
 sh EA2/ACT2.2/BLUE-GREEN/blue-green.sh
+kubectl delete -f EA2/ACT2.2/BLUE-GREEN/blue-green.yaml
 ```
 #### 2. Verificar los resultados de las métricas:
 ```bash

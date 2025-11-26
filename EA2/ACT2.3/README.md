@@ -1,5 +1,7 @@
 # Informe Técnico: Selección de Estrategia de Despliegue Continuo (EKS)
 
+Para capturar la información, puedes volver a ejecutar los pasos de la Guía ACT2.2, y volver a capturar los tiempos y analizar con mas calma el comportamiento de cada estrategia.
+
 ## 1. Definición del Caso Práctico (Contexto)
 
 **Aplicación:** [Nombre y descripción breve de la aplicación (Ej: Plataforma de e-commerce de alto tráfico, Microservicio de autenticación, Blog corporativo).]

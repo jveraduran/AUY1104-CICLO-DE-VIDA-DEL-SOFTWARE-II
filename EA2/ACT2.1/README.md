@@ -223,6 +223,7 @@ Revisa que tengas un archivo YAML (deployment.yaml o similar) que define tu Depl
 
 #### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
+vi EA2/ACT2.2/ROLLING-UPDATE/rolling-update.yaml
 kubectl apply -f EA2/ACT2.2/ROLLING-UPDATE/rolling-update.yaml
 ```
 
@@ -239,6 +240,7 @@ Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de
 
 #### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
+vi EA2/ACT2.2/ALL-IN-ONCE/all-in-once.yaml
 kubectl apply -f EA2/ACT2.2/ALL-IN-ONCE/all-in-once.yaml
 ```
 
@@ -256,7 +258,8 @@ Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de
 
 #### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
-kubectl apply -f CANARY/canary.yaml
+vi EA2/ACT2.2/CANARY/canary.yaml
+kubectl apply -f EA2/ACT2.2/CANARY/canary.yaml
 ```
 
 #### 2. Verificar los recursos desplegados
@@ -292,7 +295,8 @@ kubectl scale deployment duoc-app-canary-v2 --replicas=3
 
 #### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
-kubectl apply -f BLUE-GREEN/blue-green.yaml
+vi EA2/ACT2.2/BLUE-GREEN/blue-green.yaml
+kubectl apply -f EA2/ACT2.2/BLUE-GREEN/blue-green.yaml
 ```
 #### 2. Verificar el Estado Inicial
 Asegúrate de que ambos Pods están Running y obtén la URL pública.
