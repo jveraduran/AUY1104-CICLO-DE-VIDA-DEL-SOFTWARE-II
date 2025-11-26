@@ -133,6 +133,8 @@ echo "URI V2 (Canary/Green): $ECR_URI_V2"
 #### 1. Construir la imagen de Docker usando el Dockerfile en el directorio actual (Para Canary | Blue Green)
 
 ```bash
+git clone https://github.com/Fundacion-Instituto-Profesional-Duoc-UC/AUY1104-CICLO-DE-VIDA-DEL-SOFTWARE-II
+cd AUY1104-CICLO-DE-VIDA-DEL-SOFTWARE-II
 sudo docker build -t $IMAGE_TAG_V1 --build-arg BUILD_COLOR="Blue" .
 echo "Imagen local V1.0 construida con el tag: $IMAGE_TAG_V1"
 sudo docker build -t $IMAGE_TAG_V2 --build-arg BUILD_COLOR="Green" .
@@ -196,7 +198,7 @@ aws eks create-nodegroup \
     --subnets ID-SUBNET-PUBLICA-1 ID-SUBNET-PUBLICA-2 \
     --instance-types t3.small \
     --node-role "TU-ARN-AWS-LABROLE" \
-    --ami-type AL2023_x86_64 \
+    --ami-type AL2023_x86_64_STANDARD \
     --region us-east-1
 ```
 
@@ -222,6 +224,7 @@ Revisa que tengas un archivo YAML (deployment.yaml o similar) que define tu Depl
 #### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
 sh EA2/ACT2.2/ROLLING-UPDATE/rolling-update.sh
+kubectl delete -f EA2/ACT2.2/ROLLING-UPDATE/rolling-update.yaml
 ```
 
 #### 2. Verificar los resultados de las métricas:
@@ -242,6 +245,7 @@ Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de
 #### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
 sh EA2/ACT2.2/ALL-IN-ONCE/all-in-once.sh
+kubectl delete -f EA2/ACT2.2/ALL-IN-ONCE/all-in-once.yaml
 ```
 
 #### 2. Verificar los resultados de las métricas:
@@ -261,6 +265,8 @@ Para un servicio de tipo LoadBalancer, el acceso inicial se realiza a través de
 
 #### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
+vi EA2/ACT2.2/CANARY/canary.yaml # Modifica primero la referencia a la imagen.
+kubectl apply -f EA2/ACT2.2/CANARY/canary.yaml
 sh EA2/ACT2.2/CANARY/canary.sh
 ```
 
@@ -277,6 +283,7 @@ echo "E. Tiempo TOTAL (Apply Canary -> Promoción Finalizada): $TOTAL_DURATION s
 
 #### 1. Aplicar el manifiesto de Deployment y Service
 ```bash
+vi EA2/ACT2.2/BLUE-GREEN/blue-green.yaml # Modifica primero la referencia a la imagen.
 sh EA2/ACT2.2/BLUE-GREEN/blue-green.sh
 ```
 #### 2. Verificar los resultados de las métricas:
