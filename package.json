@@ -24,5 +24,6 @@
   },
   "devDependencies": {
     "jest": "^29.7.0"
-  }
+  },
+  "_comment_vulnerabilidad_critica": "La versión 4.17.15 de lodash se utiliza intencionalmente para la simulación de fallos de npm audit."
 }
